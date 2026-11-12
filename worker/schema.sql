@@ -1,0 +1,15 @@
+CREATE TABLE IF NOT EXISTS users (
+ id TEXT PRIMARY KEY,
+ email TEXT NOT NULL UNIQUE,
+ salt TEXT NOT NULL,
+ password_hash TEXT NOT NULL,
+ role TEXT NOT NULL DEFAULT 'staff',
+ created_at TEXT NOT NULL
+);
+CREATE TABLE IF NOT EXISTS workspace (
+ id TEXT PRIMARY KEY,
+ payload TEXT NOT NULL DEFAULT '{}',
+ version INTEGER NOT NULL DEFAULT 1,
+ updated_at TEXT NOT NULL,
+ updated_by TEXT
+);
