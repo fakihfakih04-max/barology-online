@@ -58,6 +58,7 @@ input:focus,select:focus,textarea:focus{border-color:var(--gold)}input[type=numb
  <button class="tabbtn ghost" data-tab="calendarPage" onclick="showTab('calendarPage',this)">Event Calendar</button>
  <button class="tabbtn ghost" data-tab="operationsPage" onclick="showTab('operationsPage',this)">Operations & Inventory</button>
  <button class="tabbtn ghost" data-tab="financePage" onclick="showTab('financePage',this)">Financial Dashboard</button>
+ <button class="tabbtn ghost" data-tab="barGalleryPage" onclick="showTab('barGalleryPage',this)">Bar Gallery & Templates</button>
  <button class="tabbtn ghost" data-tab="settingsPage" onclick="showTab('settingsPage',this)">Cloud Settings</button>
 </nav>
 \n<main class="wrap" id="quotationPage">
@@ -229,7 +230,37 @@ Any additional requirements or attendance may be subject to additional charges.<
  <div class="card"><h2>Event payments & expenses</h2><div class="grid"><div class="field"><label>Event / quotation</label><select id="expenseQuote"></select></div><div class="field"><label>Expense description</label><input id="expenseName"></div><div class="field"><label>Expense amount</label><input id="expenseAmount" type="number" min="0" step="0.01"></div><div class="field"><label>Deposit received</label><input id="depositAmount" type="number" min="0" step="0.01"></div><div class="field"><label>Payment status</label><select id="paymentStatus"><option>Unpaid</option><option>Partially Paid</option><option>Paid</option></select></div></div>
  <button class="primary" style="margin-top:12px" onclick="saveFinancialEntry()">Save payment / expense</button><div class="table-wrap" style="margin-top:14px"><table><thead><tr><th>Quotation</th><th>Expense</th><th>Expense amount</th><th>Deposit</th><th>Status</th><th></th></tr></thead><tbody id="financeBody"></tbody></table></div></div>
 </section>
+<section id="barGalleryPage" class="directory-page" style="display:none;max-width:1440px;margin:24px auto;padding:0 26px 48px">
+ <div class="card" style="background:linear-gradient(135deg,#1c1813,#101010);border-color:#715a3b">
+  <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:16px;flex-wrap:wrap"><div><div class="note" style="letter-spacing:3px;color:var(--gold)">BAROLOGY COLLECTION</div><h2 style="font-size:22px;border:0;margin:7px 0 4px">Bar Gallery & Presentation Templates</h2><p class="note">Build a premium visual library of your bars and event setups. Upload photos, add descriptions and prices, then reuse this collection when preparing client presentations.</p></div><div style="font:italic 26px Georgia;color:var(--gold2)">CRAFTING EXPERIENCES</div></div>
+ </div>
+ <div class="card"><h2>Add a bar / setup to your collection</h2>
+  <div class="grid">
+   <div class="field"><label>Bar / setup name</label><input id="galleryName" placeholder="e.g. Signature Gold Bar"></div>
+   <div class="field"><label>Category</label><select id="galleryCategory"><option>Mobile Bar</option><option>Luxury Bar</option><option>Classic Bar</option><option>Back Bar</option><option>Cocktail Station</option><option>Outdoor Setup</option><option>Other</option></select></div>
+   <div class="field"><label>Starting price (optional)</label><input id="galleryPrice" type="number" min="0" step="0.01" placeholder="0.00"></div>
+   <div class="field"><label>Photo(s)</label><input id="galleryPhotos" type="file" accept="image/*" multiple></div>
+   <div class="field full"><label>Description / dimensions / included features</label><textarea id="galleryDescription" rows="3" placeholder="Describe the bar, finish, dimensions, lighting, shelves and included equipment..."></textarea></div>
+  </div>
+  <div style="display:flex;gap:9px;flex-wrap:wrap;margin-top:14px"><button class="primary" onclick="saveGalleryItem()">＋ Save bar template</button><button class="ghost" onclick="clearGalleryForm()">Clear form</button></div>
+  <p class="note" style="margin-top:10px">Images are saved in this browser on this device. Use JPG, PNG or WEBP. For online access across devices, we will connect this gallery to Cloudflare storage later.</p>
+ </div>
+ <div class="card"><div style="display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap"><h2 style="margin:0">Saved bar collection</h2><span class="note" id="galleryCount">0 templates</span></div><div id="barGalleryGrid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:16px;margin-top:18px"></div></div>
+</section>
 <section id="settingsPage" class="directory-page" style="display:none;max-width:1440px;margin:24px auto;padding:0 26px 48px">
+ <div class="card" id="companyCatalogCard">
+  <h2>Company Catalog</h2>
+  <p class="note">Upload the official BAROLOGY company catalog as a PDF. It will be kept in this browser so you can manage it here. Catalog attachment to quotation PDFs and shared online storage will be enabled in the next integration step.</p>
+  <div class="grid">
+   <div class="field full">
+    <label for="companyCatalogFile">Upload company catalog (PDF)</label>
+    <input id="companyCatalogFile" type="file" accept="application/pdf,.pdf" onchange="uploadCompanyCatalog(event)">
+    <small class="note">PDF only · Maximum file size: 30 MB · You can replace the file whenever the catalog changes.</small>
+   </div>
+  </div>
+  <div id="companyCatalogStatus" class="note" style="margin-top:12px">No company catalog uploaded yet.</div>
+  <div id="companyCatalogList" style="margin-top:12px"></div>
+ </div>
  <div class="card"><h2>BAROLOGY secure online sync</h2>
  <p class="note">Connect to the BAROLOGY API hosted on Cloudflare Workers. GitHub stores the source code and deploys the website; private customer data stays in the protected D1 database.</p>
  <div class="grid">
@@ -246,6 +277,11 @@ Any additional requirements or attendance may be subject to additional charges.<
 <div class="foot">BAROLOGY · CRAFTING EXPERIENCES</div>
 <script>
 const $=id=>document.getElementById(id);
+// Storage helpers must be initialized before loadDraft()/refreshDirectoryPickers run.
+const readStore=(key)=>{try{return JSON.parse(localStorage.getItem(key)||'[]')}catch(e){return []}};
+const writeStore=(key,data)=>localStorage.setItem(key,JSON.stringify(data));
+let editingCustomerId=null,editingPlannerId=null;
+const uid=()=>Date.now().toString(36)+Math.random().toString(36).slice(2,7);
 const fmt=n=>{const c=$('currency').value;return c==='USD'?'$'+Number(n||0).toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2}):'L.L. '+Number(n||0).toLocaleString('en-US',{maximumFractionDigits:0})};
 function addRow(tableId,item='',details='',qty=1,price=0){
  const body=$(tableId).querySelector('tbody'),tr=document.createElement('tr');
@@ -299,14 +335,10 @@ function saveQuoteCustomer(){
 }
 
 // Customer and planner directories (stored locally in this browser)
-const readStore=(key)=>{try{return JSON.parse(localStorage.getItem(key)||'[]')}catch(e){return []}};
-const writeStore=(key,data)=>localStorage.setItem(key,JSON.stringify(data));
-let editingCustomerId=null,editingPlannerId=null;
-const uid=()=>Date.now().toString(36)+Math.random().toString(36).slice(2,7);
 function showTab(id,btn){
- ['quotationPage','customersPage','plannersPage','calendarPage','operationsPage','financePage','settingsPage'].forEach(x=>$(x).style.display=x===id?(x==='quotationPage'?'grid':'block'):'none');
+ ['quotationPage','customersPage','plannersPage','calendarPage','operationsPage','financePage','barGalleryPage','settingsPage'].forEach(x=>$(x).style.display=x===id?(x==='quotationPage'?'grid':'block'):'none');
  document.querySelectorAll('.tabbtn').forEach(b=>{b.className='tabbtn ghost'});if(btn)btn.className='tabbtn primary';
- if(id==='customersPage')renderCustomers();if(id==='plannersPage'){renderPlanners();renderCommissions()}if(id==='calendarPage')renderCalendar();if(id==='operationsPage')renderOperations();if(id==='financePage')renderFinance();if(id==='settingsPage')loadCloudSettings();
+ if(id==='customersPage')renderCustomers();if(id==='plannersPage'){renderPlanners();renderCommissions()}if(id==='calendarPage')renderCalendar();if(id==='operationsPage')renderOperations();if(id==='financePage')renderFinance();if(id==='settingsPage'){loadCloudSettings();renderCompanyCatalog();}if(id==='barGalleryPage')renderBarGallery();
 }
 function refreshDirectoryPickers(){
  const customers=readStore('barology_customers'),planners=readStore('barology_planners');
@@ -422,6 +454,40 @@ function renderFinance(){
  $('financeBody').innerHTML=e.map(x=>{let q=h.find(z=>z.id===x.quoteId);return `<tr><td>${esc(q?.quoteNo||'')}</td><td>${esc(x.expenseName||'')}</td><td>${fmt(x.expense)}</td><td>${fmt(x.deposit)}</td><td>${esc(x.status)}</td><td><button class="small danger" onclick="removeStored('barology_finance_entries','${esc(x.id)}')">Delete</button></td></tr>`}).join('');
  refreshEventPickers();
 }
+
+// BAROLOGY visual bar-template gallery (images stored in IndexedDB on this device)
+const GALLERY_DB='barology_bar_gallery_db',GALLERY_STORE='bar_templates';
+function openGalleryDB(){return new Promise((resolve,reject)=>{const r=indexedDB.open(GALLERY_DB,1);r.onupgradeneeded=()=>{if(!r.result.objectStoreNames.contains(GALLERY_STORE))r.result.createObjectStore(GALLERY_STORE,{keyPath:'id'})};r.onsuccess=()=>resolve(r.result);r.onerror=()=>reject(r.error)})}
+async function galleryAll(){const db=await openGalleryDB();return new Promise((resolve,reject)=>{const r=db.transaction(GALLERY_STORE,'readonly').objectStore(GALLERY_STORE).getAll();r.onsuccess=()=>{db.close();resolve(r.result||[])};r.onerror=()=>{db.close();reject(r.error)}})}
+async function galleryPut(item){const db=await openGalleryDB();return new Promise((resolve,reject)=>{const tx=db.transaction(GALLERY_STORE,'readwrite');tx.objectStore(GALLERY_STORE).put(item);tx.oncomplete=()=>{db.close();resolve()};tx.onerror=()=>{db.close();reject(tx.error)}})}
+async function galleryDelete(id){const db=await openGalleryDB();return new Promise((resolve,reject)=>{const tx=db.transaction(GALLERY_STORE,'readwrite');tx.objectStore(GALLERY_STORE).delete(id);tx.oncomplete=()=>{db.close();resolve()};tx.onerror=()=>{db.close();reject(tx.error)}})}
+function clearGalleryForm(){$('galleryName').value='';$('galleryPrice').value='';$('galleryDescription').value='';$('galleryPhotos').value='';$('galleryCategory').value='Mobile Bar'}
+async function saveGalleryItem(){
+ const name=$('galleryName').value.trim(),files=[...($('galleryPhotos').files||[])];
+ if(!name){alert('Please enter a bar / setup name.');$('galleryName').focus();return}
+ if(!files.length){alert('Please upload at least one bar photo.');return}
+ if(files.some(f=>!f.type.startsWith('image/'))){alert('Please select image files only.');return}
+ if(files.reduce((n,f)=>n+f.size,0)>35*1024*1024){alert('The selected photos exceed 35 MB in total.');return}
+ try{const photos=await Promise.all(files.map(f=>new Promise((resolve,reject)=>{const r=new FileReader();r.onload=()=>resolve({name:f.name,type:f.type,data:r.result});r.onerror=()=>reject(r.error);r.readAsDataURL(f)})));
+ const items=await galleryAll();items.unshift({id:uid(),name,category:$('galleryCategory').value,price:Number($('galleryPrice').value)||0,description:$('galleryDescription').value.trim(),photos,createdAt:new Date().toISOString()});
+ await galleryPut(items[0]);clearGalleryForm();await renderBarGallery();alert('Bar template and photos saved on this device.');
+ }catch(e){alert('Could not save photos: '+e.message+' Try smaller images.')}}
+async function renderBarGallery(){const host=$('barGalleryGrid');if(!host)return;try{const items=await galleryAll();$('galleryCount').textContent=items.length+' template(s)';if(!items.length){host.innerHTML='<div class="print-box" style="grid-column:1/-1;text-align:center;padding:35px"><div style="font:24px Georgia;color:#b99a70">Your collection starts here</div><p class="note">Upload your first bar photo to create a professional presentation library.</p></div>';return}
+host.innerHTML=items.map(x=>`<article class="card" style="margin:0;padding:12px;overflow:hidden"><div style="display:grid;grid-template-columns:repeat(2,1fr);gap:5px">${(x.photos||[]).slice(0,4).map(ph=>`<img src="${ph.data}" alt="${esc(x.name)}" style="width:100%;height:145px;object-fit:cover;border-radius:6px;${(x.photos||[]).length===1?'grid-column:1/-1;height:220px':''}">`).join('')}</div><div style="padding:10px 2px 2px"><div class="note" style="color:var(--gold);letter-spacing:1.5px">${esc(x.category)}</div><h3 style="font:20px Georgia;color:var(--gold2);margin:5px 0">${esc(x.name)}</h3><p class="note" style="min-height:42px">${esc(x.description||'No description added.')}</p><div style="display:flex;justify-content:space-between;align-items:center;gap:8px"><strong style="color:var(--gold2)">${x.price?fmt(x.price):'Price on request'}</strong><span class="note">${(x.photos||[]).length} photo(s)</span></div><button class="small danger" style="margin-top:12px" onclick="deleteGalleryItem('${esc(x.id)}')">Delete template</button></div></article>`).join('');
+ }catch(e){host.innerHTML='<p class="note">Gallery storage is unavailable in this browser.</p>';}}
+async function deleteGalleryItem(id){if(!confirm('Delete this bar template and its photos?'))return;await galleryDelete(id);renderBarGallery()}
+
+// Company catalog file storage (IndexedDB keeps the PDF on this browser/device).
+const CATALOG_DB='barology_files_db', CATALOG_STORE='company_files';
+function openCatalogDB(){return new Promise((resolve,reject)=>{const req=indexedDB.open(CATALOG_DB,1);req.onupgradeneeded=()=>{const db=req.result;if(!db.objectStoreNames.contains(CATALOG_STORE))db.createObjectStore(CATALOG_STORE,{keyPath:'id'})};req.onsuccess=()=>resolve(req.result);req.onerror=()=>reject(req.error)})}
+async function saveCatalogFile(record){const db=await openCatalogDB();return new Promise((resolve,reject)=>{const tx=db.transaction(CATALOG_STORE,'readwrite');tx.objectStore(CATALOG_STORE).put(record);tx.oncomplete=()=>{db.close();resolve()};tx.onerror=()=>{db.close();reject(tx.error)}})}
+async function getCatalogFiles(){const db=await openCatalogDB();return new Promise((resolve,reject)=>{const req=db.transaction(CATALOG_STORE,'readonly').objectStore(CATALOG_STORE).getAll();req.onsuccess=()=>{db.close();resolve(req.result||[])};req.onerror=()=>{db.close();reject(req.error)}})}
+async function deleteCatalogFile(id){const db=await openCatalogDB();return new Promise((resolve,reject)=>{const tx=db.transaction(CATALOG_STORE,'readwrite');tx.objectStore(CATALOG_STORE).delete(id);tx.oncomplete=()=>{db.close();resolve()};tx.onerror=()=>{db.close();reject(tx.error)}})}
+function fileSizeLabel(bytes){return bytes<1024*1024?(bytes/1024).toFixed(0)+' KB':(bytes/1024/1024).toFixed(2)+' MB'}
+async function uploadCompanyCatalog(event){const file=event.target.files?.[0];if(!file)return; if(file.type!=='application/pdf'&&!file.name.toLowerCase().endsWith('.pdf')){alert('Please choose a PDF file.');event.target.value='';return}if(file.size>30*1024*1024){alert('The PDF is larger than 30 MB. Please choose a smaller file.');event.target.value='';return}try{$('companyCatalogStatus').textContent='Saving catalog on this device...';await saveCatalogFile({id:'barology-company-catalog',name:file.name,size:file.size,type:'application/pdf',updatedAt:new Date().toISOString(),blob:file});await renderCompanyCatalog();$('companyCatalogStatus').textContent='Company catalog uploaded successfully on this device.'}catch(e){$('companyCatalogStatus').textContent='Could not save catalog: '+e.message;alert('Could not save the PDF. Check available browser storage.')}event.target.value=''}
+async function renderCompanyCatalog(){const host=$('companyCatalogList');if(!host)return;try{const files=await getCatalogFiles();if(!files.length){host.innerHTML='<div class="print-box">No catalog uploaded yet. Use the upload field above to add your company PDF.</div>';return}host.innerHTML=files.map(f=>`<div class="print-box" style="display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap"><div><b>${esc(f.name)}</b><div class="note">${fileSizeLabel(f.size)} · Uploaded ${new Date(f.updatedAt).toLocaleString()}</div></div><div style="display:flex;gap:8px;flex-wrap:wrap"><button class="small" onclick="openCompanyCatalog()">Preview PDF</button><button class="small danger" onclick="removeCompanyCatalog()">Delete</button></div></div>`).join('')}catch(e){host.textContent='Catalog storage is not available in this browser.'}}
+async function openCompanyCatalog(){const files=await getCatalogFiles();if(!files.length)return alert('No company catalog uploaded.');const url=URL.createObjectURL(files[0].blob);const w=window.open(url,'_blank');if(!w)alert('Allow pop-ups to preview the catalog.');setTimeout(()=>URL.revokeObjectURL(url),60000)}
+async function removeCompanyCatalog(){if(!confirm('Delete the saved company catalog from this device?'))return;await deleteCatalogFile('barology-company-catalog');$('companyCatalogStatus').textContent='Company catalog deleted.';renderCompanyCatalog()}
 const CLOUD_KEYS=['barology_customers','barology_planners','barology_quote_history','barology_staff','barology_stock','barology_event_ops','barology_finance_entries','barology_quote_draft'];
 function apiConfig(){return {url:localStorage.getItem('barology_api_url')||'',token:localStorage.getItem('barology_api_token')||'',email:localStorage.getItem('barology_api_email')||''}}
 function loadCloudSettings(){let c=apiConfig();$('apiUrl').value=c.url;$('apiEmail').value=c.email;$('apiStatus').textContent=c.token?'Signed in as '+c.email:'Not connected. Local mode is active.'}
