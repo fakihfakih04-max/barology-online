@@ -1,1 +1,1 @@
-BAROLOGY save fix: repaired broken printQuote JavaScript line. Upload index.html to GitHub Pages.
+BAROLOGY quotation: Page 1 = event details, beverage packages, all services (Preparing, Barback, Bartender, Soft Bar, Glassware Rental, Waiter, Hostess, Helper, Logistics as added). Page 2 = Bar Collection, totals, payment terms, signatures only.
