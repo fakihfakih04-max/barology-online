@@ -1,1 +1,1 @@
-BAROLOGY Event Quotation. Upload index.html to your GitHub Pages repository.
+BAROLOGY Event Quotation — fixed print layout. Upload index.html to GitHub Pages.
