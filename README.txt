@@ -1,1 +1,1 @@
-BAROLOGY Event Quotation — fixed print layout. Upload index.html to GitHub Pages.
+BAROLOGY Event Quotation — A4 print layout aligned to the approved reference. Upload index.html to GitHub Pages.
