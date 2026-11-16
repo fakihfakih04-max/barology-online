@@ -1,1 +1,1 @@
-BAROLOGY Event Quotation — A4 print layout aligned to the approved reference. Upload index.html to GitHub Pages.
+BAROLOGY save fix: repaired broken printQuote JavaScript line. Upload index.html to GitHub Pages.
