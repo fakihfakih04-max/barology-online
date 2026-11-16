@@ -1,1 +1,1 @@
-BAROLOGY quotation: Page 1 = event details, beverage packages, all services (Preparing, Barback, Bartender, Soft Bar, Glassware Rental, Waiter, Hostess, Helper, Logistics as added). Page 2 = Bar Collection, totals, payment terms, signatures only.
+BAROLOGY quotation update: robust selected bar size detection and clear green selected state with checkmark, quantity and amount in the PDF. Page split retained.

@@ -350,6 +350,31 @@ input:focus,select:focus,textarea:focus{border-color:var(--gold)}input[type=numb
  #printPreview .q-signatures { margin-top:9mm!important; }
 }
 
+
+/* Bar selection must be as visible as the selected beverage package */
+@media print {
+ #printPreview .q-bar-option.active {
+   border:2px solid #35d69a!important;
+   background:linear-gradient(135deg,#123b2a,#071b12)!important;
+   box-shadow:0 0 0 1mm #35d69a55,inset 0 0 0 .5mm #35d69a!important;
+   color:#f3fff8!important;
+ }
+ #printPreview .q-bar-option.active b {
+   background:linear-gradient(90deg,#176443,#43dfa2,#176443)!important;
+   color:#071b12!important;
+   font-weight:900!important;
+ }
+ #printPreview .q-bar-option.active span {
+   color:#72f0b8!important;
+   font-weight:900!important;
+   letter-spacing:.3px!important;
+ }
+ #printPreview .q-bar-option.active small {
+   color:#ffffff!important;
+   font-weight:800!important;
+ }
+}
+
 </style>
 </head>
 <body>
@@ -695,7 +720,9 @@ function printQuote(){
  const packs=[['ULTRA PREMIUM','♛','A refined selection of top-tier spirits and premium labels.','Johnnie Walker Blue Label · Grey Goose · Hendrick’s · Zacapa 23 · Hennessy XO · Moët & Chandon'],['PREMIUM','◇','A balanced selection of renowned brands, perfect for any celebration.','Johnnie Walker Black Label · Absolut · Bombay Sapphire · Bacardi Carta Blanca · Hennessy VS · Sparkling Wine'],['REGULAR','★','A classic selection offering great value and quality.','Johnnie Walker Red Label · Smirnoff · Gordon’s · Captain Morgan · St-Rémy · Red / White / Rosé Wine']];
  $('pPackageCards').innerHTML=packs.map(a=>{let active=d.beverage.toLowerCase()===a[0].toLowerCase();return `<article class="q-package ${active?'active':''}"><div class="q-package-title"><span>${a[1]}</span><b>${a[0]}<br>PACKAGE</b></div><p>${a[2]}</p><div class="q-brands">${a[3]}</div><div class="q-package-price"><span>${active?'SELECTED PACKAGE':'PACKAGE OPTION'}</span><b>${active?money(t.b):'—'}</b></div></article>`}).join('');
  $('pServiceCards').innerHTML=d.services.filter(x=>x.item||x.amount).map(x=>`<div class="q-service"><div class="q-service-name"><b>${esc(x.item)}</b><small>${esc(x.details||'')}</small></div><div class="q-service-price"><small>Qty: ${x.qty} | ${money(x.price)}</small><b>${money(x.amount)}</b></div></div>`).join('')||'<div class="q-service">No services added</div>';
- const bars=['1.5 M','2.0 M','3.0 M','5.0 M','6.0 M'],sel=d.modules.find(x=>/(1\.5|2|3|5|6)\s*(m|meters?)/i.test(x.item));$('pBarOptions').innerHTML=bars.map(b=>{let active=sel&&new RegExp('(?:^|\\\\D)'+b.split(' ')[0].replace('.','\\\\.')+'\\\\s*(?:m|meters?)','i').test(sel.item);return `<div class="q-bar-option ${active?'active':''}"><b>${b}</b><span>${active?'✓ SELECTED':'Bar option'}</span><small>${active?'Qty: '+sel.qty+' | '+money(sel.amount):'Available bar size'}</small></div>`}).join('');
+ const bars=['1.5 M','2.0 M','3.0 M','5.0 M','6.0 M'];
+ const sel=d.modules.map(x=>{const match=String(x.item||'').match(/(?:^|\\D)(1\\.5|2|3|5|6)(?:\\s*(?:m|meters?))?/i);return match?{...x,barSize:Number(match[1])}:null;}).find(Boolean);
+ $('pBarOptions').innerHTML=bars.map(b=>{const size=Number.parseFloat(b),active=!!sel&&sel.barSize===size;return `<div class="q-bar-option ${active?'active':''}"><b>${b}</b><span>${active?'✓ SELECTED BAR':'Bar option'}</span><small>${active?'Qty: '+sel.qty+' | '+money(sel.amount):'Available bar size'}</small></div>`}).join('');
  const selectedPackagePanel=$('pSelectedPackage'),selectedBarPanel=$('pSelectedBar');
  if(selectedPackagePanel){selectedPackagePanel.style.display=d.beverage&&d.beverage!=='Not included'?'flex':'none';selectedPackagePanel.innerHTML=d.beverage&&d.beverage!=='Not included'?`<b>✓ SELECTED BEVERAGE PACKAGE</b><span>${esc(d.beverage)} · ${money(t.b)}</span>`:'';}
  if(selectedBarPanel){selectedBarPanel.style.display=sel?'flex':'none';selectedBarPanel.innerHTML=sel?`<b>✓ SELECTED BAR</b><span>${esc(sel.item)} · Qty: ${sel.qty} · ${money(sel.amount)}</span>`:'';}
