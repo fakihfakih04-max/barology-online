@@ -442,6 +442,7 @@ button:hover,.filelabel:hover{border-color:#315b83!important;color:#173b62!impor
 <div class="toolbar">
   <strong>BAROLOGY EDITOR</strong>
   <button class="primary" onclick="printQuotationPDF()">Print / Save PDF</button>
+  <button class="primary" onclick="saveCurrentQuotationWithNotice()">Save Quotation</button>
   <button onclick="addBeverageSection()">+ Add Beverage Section</button>
   <button onclick="addServiceSection()">+ Add Service Section</button>
   <button onclick="addBarModule()">+ Add Bar Module</button>
@@ -1204,7 +1205,7 @@ function syncActiveLabel(){
  document.getElementById('activeQuotationLabel').textContent=q?(q.number+' · '+q.customerName):'New quotation';
 }
 function saveCurrentQuotation(){
- const data=quoteSnapshot(), clientName=quoteTitle();
+ recalcAll();saveData();const data=quoteSnapshot(), clientName=quoteTitle();
  const quotes=allQuotes();
  let q=quotes.find(x=>x.id===activeQuoteId);
  if(!q){const now=new Date();const number='BAR-'+now.getFullYear()+'-'+String(now.getTime()).slice(-6);q={id:'q'+now.getTime(),number,createdAt:now.toISOString()};activeQuoteId=q.id;quotes.unshift(q);}
@@ -1263,7 +1264,7 @@ function initManagement(){
  // Add a saved-customer selector to the customer details page.
  const fields=document.getElementById('clientFields');
  if(fields&&!document.getElementById('savedCustomerSelect')){
-  const wrap=document.createElement('div');wrap.className='info-row';wrap.innerHTML='<div class="icon">▾</div><label>Saved Customer</label><select id="savedCustomerSelect"><option value="">Select customer...</option></select>';fields.prepend(wrap);
+  const wrap=document.createElement('div');wrap.className='info-row no-print';wrap.innerHTML='<div class="icon">▾</div><label>Saved Customer</label><select id="savedCustomerSelect"><option value="">Select customer...</option></select>';fields.prepend(wrap);
   refreshCustomerSelect();
   wrap.querySelector('select').addEventListener('change',e=>{const c=allCustomers().find(x=>x.id===e.target.value);if(!c)return;const set=(k,v)=>{const el=document.querySelector(`[data-key="${k}"]`);if(el)el.value=v||''};set('clientName',c.name);set('venueName',c.venue);set('phone',c.phone);set('email',c.email);const addr=document.querySelector('[data-key="address"]');if(addr)addr.value=c.address||'';saveData()});
  }
@@ -1271,8 +1272,26 @@ function initManagement(){
 function refreshCustomerSelect(){const sel=document.getElementById('savedCustomerSelect');if(!sel)return;const selected=sel.value;sel.innerHTML='<option value="">Select customer...</option>'+allCustomers().map(c=>`<option value="${c.id}">${escapeApp(c.name)}</option>`).join('');sel.value=selected}
 const _saveDataOriginal=saveData;
 saveData=function(){_saveDataOriginal();if(activeQuoteId){const q=allQuotes().find(x=>x.id===activeQuoteId);if(q){q.data=quoteSnapshot();q.customerName=quoteTitle();writeStore(BARO_QUOTES_KEY,allQuotes())}}};
+
+function saveCurrentQuotationWithNotice(){
+ const q=saveCurrentQuotation();
+ if(!q){alert('Could not save quotation.');return;}
+ alert('Quotation saved: '+q.number);
+ showEditor();syncActiveLabel();renderQuotations();updateDashboard();
+}
 initManagement();
 </script>
+
+
+<style id="barology-final-print-and-save-fix">
+@media print{
+ #page1 .no-print,#page1 #savedCustomerSelect{display:none!important}
+ #barology-app-nav,#barology-app-views,.toolbar{display:none!important}
+}
+#page4 .summary-money{display:flex;align-items:center;justify-content:flex-end;gap:4px;width:100%;border-left:1px solid #c9c2b4;padding:0 8px}
+#page4 .summary-money .currency-symbol{font-weight:900;color:#172b40}
+#page4 .summary-money input{border:0!important;min-width:0!important;width:100%!important;text-align:right!important}
+</style>
 
 </body>
 </html>
