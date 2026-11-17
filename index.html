@@ -451,6 +451,52 @@ button:hover,.filelabel:hover{border-color:#315b83!important;color:#173b62!impor
   <button class="danger" onclick="resetData()">Reset</button>
   <span class="hint">Edits auto-save in this browser · A4 · 6 pages</span>
 </div>
+<div id="barology-app-nav" class="no-print">
+  <button onclick="showAppView('dashboard')">Dashboard</button>
+  <button onclick="showAppView('quotations')">All Quotations</button>
+  <button class="primary" onclick="createNewQuotation()">+ New Quotation</button>
+  <button onclick="showAppView('customers')">Customers</button>
+  <button onclick="showAppView('settings')">Quotation Settings</button>
+  <span id="activeQuotationLabel">New quotation</span>
+</div>
+<div id="barology-app-views" class="no-print">
+  <section class="app-view" id="view-dashboard">
+    <h2>BAROLOGY Dashboard</h2>
+    <div class="app-stats"><div><b id="statQuotes">0</b><span>All Quotations</span></div><div><b id="statCustomers">0</b><span>Customers</span></div></div>
+    <button class="primary" onclick="createNewQuotation()">Create New Quotation</button>
+    <button onclick="showAppView('quotations')">View All Quotations</button>
+  </section>
+  <section class="app-view" id="view-quotations" hidden>
+    <h2>All Quotations</h2>
+    <div class="app-toolbar"><input id="quotationSearch" placeholder="Search quotation / customer..." oninput="renderQuotations()"><button class="primary" onclick="createNewQuotation()">+ New Quotation</button></div>
+    <div id="quotationList"></div>
+  </section>
+  <section class="app-view" id="view-customers" hidden>
+    <h2>Customers</h2>
+    <div class="app-form">
+      <input id="customerName" placeholder="Customer name">
+      <input id="customerPhone" placeholder="Phone">
+      <input id="customerEmail" placeholder="Email">
+      <input id="customerVenue" placeholder="Venue / Company">
+      <input id="customerAddress" placeholder="Address">
+      <button class="primary" onclick="saveCustomer()">Save Customer</button>
+      <button onclick="clearCustomerForm()">Clear</button>
+    </div>
+    <div id="customerList"></div>
+  </section>
+  <section class="app-view" id="view-settings" hidden>
+    <h2>Quotation Settings</h2>
+    <div class="app-form">
+      <label>Company name <input id="settingCompany" value="BAROLOGY"></label>
+      <label>Default VAT % <input id="settingVat" type="number" min="0" max="100" step="0.1" value="11"></label>
+      <label>Default discount % <input id="settingDiscount" type="number" min="0" max="100" step="0.1" value="0"></label>
+      <label>Validity (days) <input id="settingValidity" type="number" min="1" value="10"></label>
+      <label>Payment terms <textarea id="settingPayment">50% upon confirmation and signature. 50% one week prior to the event.</textarea></label>
+      <button class="primary" onclick="saveQuotationSettings()">Save Settings</button>
+    </div>
+  </section>
+</div>
+
 
 <div id="pages">
 <!-- PAGE 1 -->
@@ -586,11 +632,11 @@ Cocktail Stations / Dispensers</textarea><input class="module-price" type="numbe
   </div>
   <div class="actionline"><button onclick="addBarModule()">+ Add Bar Module</button></div>
   <div class="summary">
-    <div class="summary-row"><label>BAR TOTAL</label><input id="barTotal" value="360" type="number" readonly></div>
-    <div class="summary-row highlight pre-discount"><label><span id="grandTotalLabel">Grand Total</span> <span class="vat-control">VAT <input id="vatPct" type="number" min="0" max="100" step="0.1" value="11" aria-label="VAT percentage">%</span></label><input id="grandTotal" value="2665" type="number" readonly></div>
+    <div class="summary-row"><label>BAR TOTAL</label><span class="summary-money"><span class="currency-symbol">$</span><input id="barTotal" value="360" type="number" readonly></span></div>
+    <div class="summary-row highlight pre-discount"><label><span id="grandTotalLabel">Grand Total</span><span class="vat-control"><span>VAT</span><input id="vatPct" type="number" min="0" max="100" step="0.1" value="11" aria-label="VAT percentage"><span>%</span></span></label><span class="summary-money"><span class="currency-symbol">$</span><input id="grandTotal" value="2665" type="number" readonly></span></div>
     <div class="summary-row discount-line"><label>Discount (%)</label><input id="discountPct" value="10" type="number"></div>
-    <div class="summary-row discount-amount-line"><label>Discount Amount</label><input id="discountAmount" value="267" type="number"></div>
-    <div class="summary-row final-total"><label>TOTAL</label><input id="afterDiscount" value="2398" type="number"></div>
+    <div class="summary-row discount-amount-line"><label>Discount Amount</label><span class="summary-money"><span class="currency-symbol">$</span><input id="discountAmount" value="267" type="number"></span></div>
+    <div class="summary-row final-total"><label>TOTAL</label><span class="summary-money"><span class="currency-symbol">$</span><input id="afterDiscount" value="2398" type="number"></span></div>
   </div>
 </section>
 
@@ -1086,6 +1132,147 @@ window.addEventListener('afterprint',clearPrintSummary);
  #page4 .vat-control{display:none!important}
 }
 </style>
+
+
+<style id="barology-vat-and-money-layout">
+#page4 .summary-row.pre-discount label{display:flex!important;align-items:center;gap:12px;flex-wrap:wrap}
+#page4 .vat-control{display:inline-flex!important;align-items:center;gap:4px!important;padding:3px 7px;border:1px solid #8fa8bf;border-radius:6px;background:#fff!important;color:#173b62!important;font-size:11px;font-weight:800;white-space:nowrap}
+#page4 #vatPct{display:inline-block!important;visibility:visible!important;opacity:1!important;width:48px!important;min-width:48px!important;height:24px!important;padding:2px 4px!important;border:1px solid #8fa8bf!important;border-radius:4px!important;background:#fff!important;color:#173b62!important;text-align:center!important;font-size:12px!important;font-weight:800!important}
+#page4 .summary-money{display:flex;align-items:center;justify-content:flex-end;gap:3px;width:100%;min-width:0;border-left:1px solid #c9c2b4;padding:0 8px}
+#page4 .summary-money .currency-symbol{font-weight:900;color:#172b40}
+#page4 .summary-money input{border:0!important;width:100%!important;min-width:0!important;text-align:right!important;padding:8px 0!important}
+#page4 .summary-row.final-total{display:none!important}
+@media print{
+ #page4 .vat-control{display:none!important}
+ #page4 .summary-row.final-total{display:none!important}
+ #page4 .summary-money{border-left:1px solid #c9c2b4}
+ #page4 .summary-money .currency-symbol{color:#172b40!important}
+}
+</style>
+
+
+<style id="barology-management-style">
+#barology-app-nav{position:sticky;top:58px;z-index:49;display:flex;gap:7px;align-items:center;flex-wrap:wrap;padding:10px 14px;background:#173b62;border-bottom:2px solid #b58b4b}
+#barology-app-nav button{background:#fff;color:#173b62;border:1px solid #b8c7d5;font-weight:700}
+#barology-app-nav button.primary{background:#b58b4b;color:#17120b;border-color:#d8b16f}
+#activeQuotationLabel{margin-left:auto;color:#fff;font-size:12px;font-weight:700}
+#barology-app-views{max-width:1100px;margin:18px auto;padding:0 14px}
+.app-view{background:#fffdf7;border:1px solid #c9c2b4;border-radius:12px;padding:20px;margin-bottom:18px;color:#252525}
+.app-view h2{color:#173b62;margin-bottom:16px}
+.app-stats{display:flex;gap:14px;margin:14px 0}
+.app-stats>div{min-width:150px;padding:16px;border:1px solid #b8c7d5;border-radius:9px;background:#eef3f8;display:flex;flex-direction:column}
+.app-stats b{font-size:26px;color:#173b62}.app-stats span{font-size:12px}
+.app-toolbar,.app-form{display:flex;gap:9px;flex-wrap:wrap;margin:12px 0}
+.app-form input,.app-form textarea,.app-toolbar input{padding:9px;border:1px solid #b9b1a2;border-radius:6px;background:#fff;color:#222;min-width:180px}
+.app-form label{display:flex;flex-direction:column;gap:5px;font-weight:700;font-size:12px}
+.app-form textarea{min-width:300px;min-height:70px}
+.app-record{display:flex;justify-content:space-between;gap:12px;align-items:center;padding:12px;border-bottom:1px solid #ddd5c8;flex-wrap:wrap}
+.app-record strong{color:#173b62}.app-record small{display:block;color:#666}
+.app-record button{margin:2px}
+@media print{#barology-app-nav,#barology-app-views{display:none!important}}
+</style>
+
+
+<script id="barology-management-script">
+const BARO_QUOTES_KEY='barology_quotes_v1', BARO_CUSTOMERS_KEY='barology_customers_v1', BARO_SETTINGS_KEY='barology_settings_v1';
+let activeQuoteId=null, editingCustomerId=null;
+function readStore(k, fallback){try{return JSON.parse(localStorage.getItem(k)||'null')??fallback}catch(e){return fallback}}
+function writeStore(k,v){localStorage.setItem(k,JSON.stringify(v))}
+function allQuotes(){return readStore(BARO_QUOTES_KEY,[])}
+function allCustomers(){return readStore(BARO_CUSTOMERS_KEY,[])}
+function quoteSnapshot(){recalcAll();return snapshot()}
+function quoteTitle(){return document.querySelector('[data-key="clientName"]')?.value||'Untitled Customer'}
+function showAppView(name){
+ document.querySelectorAll('.app-view').forEach(v=>v.hidden=true);
+ const view=document.getElementById('view-'+name);if(view)view.hidden=false;
+ document.getElementById('pages').style.display='none';
+ if(name==='dashboard')updateDashboard();
+ if(name==='quotations')renderQuotations();
+ if(name==='customers')renderCustomers();
+}
+function showEditor(){
+ document.querySelectorAll('.app-view').forEach(v=>v.hidden=true);
+ document.getElementById('pages').style.display='';
+ window.scrollTo({top:0,behavior:'smooth'});
+}
+function updateDashboard(){
+ document.getElementById('statQuotes').textContent=allQuotes().length;
+ document.getElementById('statCustomers').textContent=allCustomers().length;
+}
+function syncActiveLabel(){
+ const q=allQuotes().find(x=>x.id===activeQuoteId);
+ document.getElementById('activeQuotationLabel').textContent=q?(q.number+' · '+q.customerName):'New quotation';
+}
+function saveCurrentQuotation(){
+ const data=quoteSnapshot(), clientName=quoteTitle();
+ const quotes=allQuotes();
+ let q=quotes.find(x=>x.id===activeQuoteId);
+ if(!q){const now=new Date();const number='BAR-'+now.getFullYear()+'-'+String(now.getTime()).slice(-6);q={id:'q'+now.getTime(),number,createdAt:now.toISOString()};activeQuoteId=q.id;quotes.unshift(q);}
+ q.customerName=clientName;q.venue=document.querySelector('[data-key="venueName"]')?.value||'';
+ q.eventDate=document.querySelector('[data-key="eventDate"]')?.value||'';
+ q.total=document.getElementById('afterDiscount')?.value||document.getElementById('grandTotal')?.value||'0';
+ q.data=data;q.updatedAt=new Date().toISOString();
+ writeStore(BARO_QUOTES_KEY,quotes);syncActiveLabel();updateDashboard();return q;
+}
+function loadQuotation(id){
+ const q=allQuotes().find(x=>x.id===id);if(!q)return;
+ activeQuoteId=id;
+ document.querySelectorAll('.page').forEach((p,i)=>{if(q.data?.html?.['p'+i])p.innerHTML=q.data.html['p'+i]});
+ bindInputs();normalizePricingRows();normalizeServiceRows();ensurePriceLabels();normalizeBarModules();recalcAll();showEditor();syncActiveLabel();
+}
+function renderQuotations(){
+ const search=(document.getElementById('quotationSearch')?.value||'').toLowerCase();
+ const list=document.getElementById('quotationList');
+ const quotes=allQuotes().filter(q=>(q.number+' '+q.customerName+' '+q.venue).toLowerCase().includes(search));
+ list.innerHTML=quotes.length?quotes.map(q=>`<div class="app-record"><div><strong>${escapeApp(q.number)}</strong><small>${escapeApp(q.customerName||'No customer')} · ${escapeApp(q.eventDate||'No event date')} · $${escapeApp(q.total||'0')}</small></div><div><button onclick="loadQuotation('${q.id}')">Open / Edit</button><button onclick="printSavedQuotation('${q.id}')">Open PDF view</button><button onclick="deleteQuotation('${q.id}')">Delete</button></div></div>`).join(''):'<p>No quotations saved yet.</p>';
+}
+function escapeApp(v){return String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
+function deleteQuotation(id){if(!confirm('Delete this quotation?'))return;writeStore(BARO_QUOTES_KEY,allQuotes().filter(q=>q.id!==id));if(activeQuoteId===id)activeQuoteId=null;renderQuotations();updateDashboard();syncActiveLabel()}
+function printSavedQuotation(id){loadQuotation(id);setTimeout(()=>printQuotationPDF(),150)}
+function createNewQuotation(){
+ if(activeQuoteId){const current=allQuotes().find(q=>q.id===activeQuoteId);if(current)saveCurrentQuotation();}
+ activeQuoteId=null;
+ document.querySelectorAll('[data-key]').forEach(x=>x.value='');
+ document.querySelectorAll('#page1 input').forEach(x=>x.value='');
+ const vat=document.getElementById('vatPct');if(vat)vat.value=readStore(BARO_SETTINGS_KEY,{}).vat??11;
+ const disc=document.getElementById('discountPct');if(disc)disc.value=readStore(BARO_SETTINGS_KEY,{}).discount??0;
+ recalcAll();showEditor();syncActiveLabel();
+ const customer=prompt('Enter customer name, or choose a saved customer from the customer selector on page 1.');if(customer){const name=document.querySelector('[data-key="clientName"]');if(name)name.value=customer;}
+ saveData();
+}
+function saveCustomer(){
+ const name=document.getElementById('customerName').value.trim();if(!name){alert('Enter customer name.');return}
+ const list=allCustomers();let c=list.find(x=>x.id===editingCustomerId);
+ if(!c)c={id:'c'+Date.now()};
+ Object.assign(c,{name,phone:document.getElementById('customerPhone').value,email:document.getElementById('customerEmail').value,venue:document.getElementById('customerVenue').value,address:document.getElementById('customerAddress').value});
+ if(!list.some(x=>x.id===c.id))list.unshift(c);writeStore(BARO_CUSTOMERS_KEY,list);clearCustomerForm();renderCustomers();updateDashboard();
+}
+function clearCustomerForm(){editingCustomerId=null;['customerName','customerPhone','customerEmail','customerVenue','customerAddress'].forEach(id=>document.getElementById(id).value='')}
+function editCustomer(id){const c=allCustomers().find(x=>x.id===id);if(!c)return;editingCustomerId=id;document.getElementById('customerName').value=c.name;document.getElementById('customerPhone').value=c.phone||'';document.getElementById('customerEmail').value=c.email||'';document.getElementById('customerVenue').value=c.venue||'';document.getElementById('customerAddress').value=c.address||'';showAppView('customers')}
+function deleteCustomer(id){if(!confirm('Delete this customer?'))return;writeStore(BARO_CUSTOMERS_KEY,allCustomers().filter(c=>c.id!==id));renderCustomers();updateDashboard()}
+function renderCustomers(){const el=document.getElementById('customerList');el.innerHTML=allCustomers().map(c=>`<div class="app-record"><div><strong>${escapeApp(c.name)}</strong><small>${escapeApp(c.phone)} · ${escapeApp(c.email)} · ${escapeApp(c.venue)}</small></div><div><button onclick="editCustomer('${c.id}')">Edit</button><button onclick="deleteCustomer('${c.id}')">Delete</button></div></div>`).join('')||'<p>No customers saved yet.</p>'}
+function saveQuotationSettings(){
+ const settings={company:document.getElementById('settingCompany').value,vat:Math.max(0,Math.min(100,parseFloat(document.getElementById('settingVat').value)||0)),discount:Math.max(0,Math.min(100,parseFloat(document.getElementById('settingDiscount').value)||0)),validity:document.getElementById('settingValidity').value,payment:document.getElementById('settingPayment').value};
+ writeStore(BARO_SETTINGS_KEY,settings);alert('Quotation settings saved.');const vat=document.getElementById('vatPct');if(vat)vat.value=settings.vat;const disc=document.getElementById('discountPct');if(disc)disc.value=settings.discount;recalcAll();
+}
+function initManagement(){
+ const settings=readStore(BARO_SETTINGS_KEY,{});
+ if(settings.vat!==undefined){document.getElementById('settingVat').value=settings.vat;if(document.getElementById('vatPct'))document.getElementById('vatPct').value=settings.vat}
+ if(settings.discount!==undefined){document.getElementById('settingDiscount').value=settings.discount;if(document.getElementById('discountPct'))document.getElementById('discountPct').value=settings.discount}
+ updateDashboard();renderCustomers();renderQuotations();syncActiveLabel();
+ // Add a saved-customer selector to the customer details page.
+ const fields=document.getElementById('clientFields');
+ if(fields&&!document.getElementById('savedCustomerSelect')){
+  const wrap=document.createElement('div');wrap.className='info-row';wrap.innerHTML='<div class="icon">▾</div><label>Saved Customer</label><select id="savedCustomerSelect"><option value="">Select customer...</option></select>';fields.prepend(wrap);
+  refreshCustomerSelect();
+  wrap.querySelector('select').addEventListener('change',e=>{const c=allCustomers().find(x=>x.id===e.target.value);if(!c)return;const set=(k,v)=>{const el=document.querySelector(`[data-key="${k}"]`);if(el)el.value=v||''};set('clientName',c.name);set('venueName',c.venue);set('phone',c.phone);set('email',c.email);const addr=document.querySelector('[data-key="address"]');if(addr)addr.value=c.address||'';saveData()});
+ }
+}
+function refreshCustomerSelect(){const sel=document.getElementById('savedCustomerSelect');if(!sel)return;const selected=sel.value;sel.innerHTML='<option value="">Select customer...</option>'+allCustomers().map(c=>`<option value="${c.id}">${escapeApp(c.name)}</option>`).join('');sel.value=selected}
+const _saveDataOriginal=saveData;
+saveData=function(){_saveDataOriginal();if(activeQuoteId){const q=allQuotes().find(x=>x.id===activeQuoteId);if(q){q.data=quoteSnapshot();q.customerName=quoteTitle();writeStore(BARO_QUOTES_KEY,allQuotes())}}};
+initManagement();
+</script>
 
 </body>
 </html>
