@@ -1,11 +1,5 @@
-# BAROLOGY Quotation Management V4
+# BAROLOGY Quotation Management V5
 
-Selecting a saved customer on the quotation cover page automatically fills the stored customer details:
-- Client Name
-- Venue Name
-- Phone Number
-- Email
+Fixes reopening saved quotations and the Open PDF view action. Saved page HTML is restored first, then all saved live input values and data-key fields are reapplied before recalculation and printing.
 
-Event Date and Number of Guests remain quotation-specific fields and are entered for each event.
-
-Upload `index.html` and `README.md` to the root of the GitHub repository and enable GitHub Pages. Customer and quotation data remain in the same browser's local storage.
+Publish by replacing `index.html` in the GitHub repository root. Existing browser-local saved quotations created by earlier versions remain in local storage; after deploying, open the saved quotation again and use Open PDF view.

@@ -1216,10 +1216,24 @@ function saveCurrentQuotation(){
  writeStore(BARO_QUOTES_KEY,quotes);syncActiveLabel();updateDashboard();return q;
 }
 function loadQuotation(id){
- const q=allQuotes().find(x=>x.id===id);if(!q)return;
+ const q=allQuotes().find(x=>x.id===id);if(!q||!q.data)return;
  activeQuoteId=id;
- document.querySelectorAll('.page').forEach((p,i)=>{if(q.data?.html?.['p'+i])p.innerHTML=q.data.html['p'+i]});
- bindInputs();normalizePricingRows();normalizeServiceRows();ensurePriceLabels();normalizeBarModules();recalcAll();showEditor();syncActiveLabel();
+ // Restore the saved page structure first (including added rows/modules).
+ document.querySelectorAll('.page').forEach((p,i)=>{
+  if(q.data.html&&q.data.html['p'+i])p.innerHTML=q.data.html['p'+i];
+ });
+ // Restore live input values: innerHTML alone does not contain values typed by the user.
+ document.querySelectorAll('[data-key]').forEach(el=>{
+  const key=el.dataset.key;
+  if(q.data.fields&&Object.prototype.hasOwnProperty.call(q.data.fields,key))el.value=q.data.fields[key];
+ });
+ if(Array.isArray(q.data.values)){
+  document.querySelectorAll('.page input, .page textarea, .page select').forEach((el,i)=>{
+   if(q.data.values[i]!==undefined)el.value=q.data.values[i];
+  });
+ }
+ bindInputs();normalizePricingRows();normalizeServiceRows();ensurePriceLabels();normalizeBarModules();recalcAll();
+ showEditor();syncActiveLabel();
 }
 function renderQuotations(){
  const search=(document.getElementById('quotationSearch')?.value||'').toLowerCase();
@@ -1229,7 +1243,12 @@ function renderQuotations(){
 }
 function escapeApp(v){return String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
 function deleteQuotation(id){if(!confirm('Delete this quotation?'))return;writeStore(BARO_QUOTES_KEY,allQuotes().filter(q=>q.id!==id));if(activeQuoteId===id)activeQuoteId=null;renderQuotations();updateDashboard();syncActiveLabel()}
-function printSavedQuotation(id){loadQuotation(id);setTimeout(()=>printQuotationPDF(),150)}
+function printSavedQuotation(id){
+ const q=allQuotes().find(x=>x.id===id);
+ if(!q){alert('Quotation not found.');return;}
+ loadQuotation(id);
+ setTimeout(()=>{recalcAll();printQuotationPDF();},350);
+}
 function createNewQuotation(){
  if(activeQuoteId){const current=allQuotes().find(q=>q.id===activeQuoteId);if(current)saveCurrentQuotation();}
  activeQuoteId=null;
