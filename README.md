@@ -1,12 +1,11 @@
-# BAROLOGY Quotation Management V3
+# BAROLOGY Quotation Management V4
 
-Customer selector refresh fix.
+Selecting a saved customer on the quotation cover page automatically fills the stored customer details:
+- Client Name
+- Venue Name
+- Phone Number
+- Email
 
-- Save a customer under Customers.
-- The saved customer appears immediately in the Saved Customer dropdown on the quotation cover page.
-- Select a customer to fill client name, venue, phone, and email.
-- Create and save quotations from the editor.
+Event Date and Number of Guests remain quotation-specific fields and are entered for each event.
 
-Publish by uploading `index.html` and `README.md` to the GitHub repository root, then enable GitHub Pages.
-
-Data is stored in this browser's local storage and is not shared between devices.
+Upload `index.html` and `README.md` to the root of the GitHub repository and enable GitHub Pages. Customer and quotation data remain in the same browser's local storage.

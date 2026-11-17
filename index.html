@@ -1265,10 +1265,20 @@ function initManagement(){
  if(fields&&!document.getElementById('savedCustomerSelect')){
   const wrap=document.createElement('div');wrap.className='info-row no-print';wrap.innerHTML='<div class="icon">▾</div><label>Saved Customer</label><select id="savedCustomerSelect"><option value="">Select customer...</option></select>';fields.prepend(wrap);
   refreshCustomerSelect();
-  wrap.querySelector('select').addEventListener('change',e=>{const c=allCustomers().find(x=>x.id===e.target.value);if(!c)return;const set=(k,v)=>{const el=document.querySelector(`[data-key="${k}"]`);if(el)el.value=v||''};set('clientName',c.name);set('venueName',c.venue);set('phone',c.phone);set('email',c.email);const addr=document.querySelector('[data-key="address"]');if(addr)addr.value=c.address||'';saveData()});
+  wrap.querySelector('select').addEventListener('change',e=>fillSavedCustomerIntoQuotation(e.target.value));
  }
 }
-function refreshCustomerSelect(){const sel=document.getElementById('savedCustomerSelect');if(!sel)return;const selected=sel.value;const customers=allCustomers();sel.innerHTML='<option value="">Select customer...</option>'+customers.map(c=>`<option value="${c.id}">${escapeApp(c.name)}</option>`).join('');sel.value=customers.some(c=>c.id===selected)?selected:''}
+function fillSavedCustomerIntoQuotation(customerId){
+ const c=allCustomers().find(x=>x.id===customerId);
+ if(!c)return;
+ const fields={clientName:c.name||'',venueName:c.venue||'',phone:c.phone||'',email:c.email||'',address:c.address||''};
+ Object.entries(fields).forEach(([key,value])=>{
+  const el=document.querySelector(`#page1 [data-key="${key}"]`);
+  if(el){el.value=value;el.dispatchEvent(new Event('input',{bubbles:true}));el.dispatchEvent(new Event('change',{bubbles:true}));}
+ });
+ saveData();
+}
+function refreshCustomerSelect(){const sel=document.getElementById('savedCustomerSelect');if(!sel)return;const selected=sel.value;const customers=allCustomers();sel.innerHTML='<option value="">Select customer...</option>'+customers.map(c=>`<option value="${c.id}">${escapeApp(c.name)}</option>`).join('');sel.value=customers.some(c=>c.id===selected)?selected:'';if(sel.value)fillSavedCustomerIntoQuotation(sel.value)}
 const _saveDataOriginal=saveData;
 saveData=function(){_saveDataOriginal();if(activeQuoteId){const q=allQuotes().find(x=>x.id===activeQuoteId);if(q){q.data=quoteSnapshot();q.customerName=quoteTitle();writeStore(BARO_QUOTES_KEY,allQuotes())}}};
 
