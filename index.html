@@ -454,7 +454,7 @@ button:hover,.filelabel:hover{border-color:#315b83!important;color:#173b62!impor
 </div>
 <div id="barology-app-nav" class="no-print">
   <button onclick="showAppView('dashboard')">Dashboard</button>
-  <button onclick="showAppView('quotations')">All Quotations</button>
+  <button onclick="showAppView('quotations')">Pending Quotations</button><button onclick="showAppView('approved')">Approved Quotations</button>
   <button class="primary" onclick="createNewQuotation()">+ New Quotation</button>
   <button onclick="showAppView('customers')">Customers</button>
   <button onclick="showAppView('settings')">Quotation Settings</button>
@@ -468,9 +468,17 @@ button:hover,.filelabel:hover{border-color:#315b83!important;color:#173b62!impor
     <button onclick="showAppView('quotations')">View All Quotations</button>
   </section>
   <section class="app-view" id="view-quotations" hidden>
-    <h2>All Quotations</h2>
+    <h2>Pending Quotations</h2>
     <div class="app-toolbar"><input id="quotationSearch" placeholder="Search quotation / customer..." oninput="renderQuotations()"><button class="primary" onclick="createNewQuotation()">+ New Quotation</button></div>
     <div id="quotationList"></div>
+  </section>
+  <section class="app-view" id="view-approved" hidden>
+    <h2>Approved Quotations</h2>
+    <div class="app-toolbar"><input id="approvedSearch" placeholder="Search approved quotation / customer..." oninput="renderApprovedQuotations()"></div>
+    <div id="approvedQuotationList"></div>
+    <h3>Customer Email Reminders</h3>
+    <p>Reminder dates are calculated from the event date: 7 days before and 3 days before.</p>
+    <div id="reminderList"></div>
   </section>
   <section class="app-view" id="view-customers" hidden>
     <h2>Customers</h2>
@@ -1189,6 +1197,7 @@ function showAppView(name){
  document.getElementById('pages').style.display='none';
  if(name==='dashboard')updateDashboard();
  if(name==='quotations')renderQuotations();
+ if(name==='approved'){renderApprovedQuotations();renderReminderList();}
  if(name==='customers')renderCustomers();refreshCustomerSelect();
 }
 function showEditor(){
@@ -1210,6 +1219,8 @@ function saveCurrentQuotation(){
  let q=quotes.find(x=>x.id===activeQuoteId);
  if(!q){const now=new Date();const number='BAR-'+now.getFullYear()+'-'+String(now.getTime()).slice(-6);q={id:'q'+now.getTime(),number,createdAt:now.toISOString()};activeQuoteId=q.id;quotes.unshift(q);}
  q.customerName=clientName;q.venue=document.querySelector('[data-key="venueName"]')?.value||'';
+ q.email=document.querySelector('[data-key="email"]')?.value||q.email||'';
+ q.status=q.status||'Pending';
  q.eventDate=document.querySelector('[data-key="eventDate"]')?.value||'';
  q.total=document.getElementById('afterDiscount')?.value||document.getElementById('grandTotal')?.value||'0';
  q.data=data;q.updatedAt=new Date().toISOString();
@@ -1238,9 +1249,45 @@ function loadQuotation(id){
 function renderQuotations(){
  const search=(document.getElementById('quotationSearch')?.value||'').toLowerCase();
  const list=document.getElementById('quotationList');
- const quotes=allQuotes().filter(q=>(q.number+' '+q.customerName+' '+q.venue).toLowerCase().includes(search));
- list.innerHTML=quotes.length?quotes.map(q=>`<div class="app-record"><div><strong>${escapeApp(q.number)}</strong><small>${escapeApp(q.customerName||'No customer')} · ${escapeApp(q.eventDate||'No event date')} · $${escapeApp(q.total||'0')}</small></div><div><button onclick="loadQuotation('${q.id}')">Open / Edit</button><button onclick="printSavedQuotation('${q.id}')">Open PDF view</button><button onclick="deleteQuotation('${q.id}')">Delete</button></div></div>`).join(''):'<p>No quotations saved yet.</p>';
+ const quotes=allQuotes().filter(q=>(q.status||'Pending')!=='Approved'&&(q.number+' '+q.customerName+' '+q.venue).toLowerCase().includes(search));
+ list.innerHTML=quotes.length?quotes.map(q=>`<div class="app-record"><div><strong>${escapeApp(q.number)}</strong><small>${escapeApp(q.customerName||'No customer')} · ${escapeApp(q.eventDate||'No event date')} · $${escapeApp(q.total||'0')} · <b>Pending</b></small></div><div><button onclick="loadQuotation('${q.id}')">Open / Edit</button><button class="primary" onclick="approveQuotation('${q.id}')">Approve</button><button onclick="deleteQuotation('${q.id}')">Delete</button></div></div>`).join(''):'<p>No pending quotations.</p>';
 }
+function approveQuotation(id){
+ const quotes=allQuotes(),q=quotes.find(x=>x.id===id);if(!q)return;
+ q.status='Approved';q.approvedAt=new Date().toISOString();q.reminders=q.reminders||{sevenDay:false,threeDay:false};
+ writeStore(BARO_QUOTES_KEY,quotes);renderQuotations();renderApprovedQuotations();renderReminderList();updateDashboard();
+ alert(q.number+' approved and moved to Approved Quotations.');
+}
+function renderApprovedQuotations(){
+ const search=(document.getElementById('approvedSearch')?.value||'').toLowerCase();
+ const list=document.getElementById('approvedQuotationList');
+ const quotes=allQuotes().filter(q=>q.status==='Approved'&&(q.number+' '+q.customerName+' '+q.venue).toLowerCase().includes(search));
+ list.innerHTML=quotes.length?quotes.map(q=>`<div class="app-record"><div><strong>${escapeApp(q.number)}</strong><small>${escapeApp(q.customerName||'No customer')} · ${escapeApp(q.eventDate||'No event date')} · $${escapeApp(q.total||'0')} · <b>Approved</b></small></div><div><button onclick="loadQuotation('${q.id}')">Open / Edit</button><button onclick="unapproveQuotation('${q.id}')">Move to Pending</button></div></div>`).join(''):'<p>No approved quotations.</p>';
+}
+function unapproveQuotation(id){const q=allQuotes().find(x=>x.id===id);if(!q)return;q.status='Pending';writeStore(BARO_QUOTES_KEY,allQuotes());renderApprovedQuotations();renderReminderList();renderQuotations();}
+function reminderDate(q,days){
+ if(!q.eventDate)return null;
+ const d=new Date(q.eventDate+'T12:00:00');if(Number.isNaN(d.getTime()))return null;d.setDate(d.getDate()-days);return d;
+}
+function emailReminder(q,days){
+ const to=q.email||'';
+ const when=days===7?'one week':'three days';
+ const subject=encodeURIComponent('BAROLOGY Event Reminder – '+q.number);
+ const body=encodeURIComponent('Dear '+(q.customerName||'Customer')+',\\n\\nThis is a friendly reminder that your event is scheduled for '+(q.eventDate||'the agreed date')+'. Your BAROLOGY quotation '+q.number+' has been approved.\\n\\nWe look forward to serving you.\\nBAROLOGY – CRAFTING EXPERIENCES');
+ location.href='mailto:'+encodeURIComponent(to)+'?subject='+subject+'&body='+body;
+}
+function renderReminderList(){
+ const el=document.getElementById('reminderList');if(!el)return;
+ const approved=allQuotes().filter(q=>q.status==='Approved');
+ const rows=[];
+ approved.forEach(q=>[7,3].forEach(days=>{
+  const date=reminderDate(q,days);if(!date)return;
+  const key=days===7?'sevenDay':'threeDay';
+  rows.push(`<div class="app-record"><div><strong>${escapeApp(q.number)} – ${days}-day reminder</strong><small>${escapeApp(q.customerName||'Customer')} · ${escapeApp(q.email||'No email saved')} · Send on ${date.toLocaleDateString()}</small></div><button ${q.reminders?.[key]?'disabled':''} onclick="emailReminder(allQuotes().find(x=>x.id==='${q.id}'),${days})">Prepare Email</button><button onclick="markReminderSent('${q.id}',${days})">Mark Sent</button></div>`);
+ }));
+ el.innerHTML=rows.join('')||'<p>No scheduled reminders. Approved quotations with an event date will appear here.</p>';
+}
+function markReminderSent(id,days){const q=allQuotes().find(x=>x.id===id);if(!q)return;q.reminders=q.reminders||{};q.reminders[days===7?'sevenDay':'threeDay']=true;writeStore(BARO_QUOTES_KEY,allQuotes());renderReminderList();}
 function escapeApp(v){return String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
 function deleteQuotation(id){if(!confirm('Delete this quotation?'))return;writeStore(BARO_QUOTES_KEY,allQuotes().filter(q=>q.id!==id));if(activeQuoteId===id)activeQuoteId=null;renderQuotations();updateDashboard();syncActiveLabel()}
 function printSavedQuotation(id){
@@ -1319,6 +1366,12 @@ initManagement();
 #page4 .summary-money{display:flex;align-items:center;justify-content:flex-end;gap:4px;width:100%;border-left:1px solid #c9c2b4;padding:0 8px}
 #page4 .summary-money .currency-symbol{font-weight:900;color:#172b40}
 #page4 .summary-money input{border:0!important;min-width:0!important;width:100%!important;text-align:right!important}
+</style>
+
+
+<style id="barology-approval-workflow-style">
+#view-approved h3{margin-top:24px;color:#173b62}
+.app-record button:disabled{opacity:.45;cursor:not-allowed}
 </style>
 
 </body>

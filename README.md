@@ -1,5 +1,16 @@
-# BAROLOGY Quotation Management V5
+# BAROLOGY Quotation Management V6
 
-Fixes reopening saved quotations and the Open PDF view action. Saved page HTML is restored first, then all saved live input values and data-key fields are reapplied before recalculation and printing.
+## Approval workflow
+- New quotations are Pending.
+- Approve moves the quotation to Approved Quotations.
+- Approved quotations can be moved back to Pending.
 
-Publish by replacing `index.html` in the GitHub repository root. Existing browser-local saved quotations created by earlier versions remain in local storage; after deploying, open the saved quotation again and use Open PDF view.
+## Email reminders
+- Approved quotations with an event date get reminder dates 7 days and 3 days before the event.
+- Prepare Email opens the user's email application with a prefilled message addressed to the saved customer email.
+- Mark Sent records that the reminder was sent.
+
+**Important:** GitHub Pages is static hosting and cannot send scheduled emails automatically. These are prepared/manual email reminders. Fully automatic sending requires a backend and an email delivery provider.
+
+## Publish
+Replace `index.html` in the GitHub repository root with this version, then refresh the site.
