@@ -1189,7 +1189,7 @@ function showAppView(name){
  document.getElementById('pages').style.display='none';
  if(name==='dashboard')updateDashboard();
  if(name==='quotations')renderQuotations();
- if(name==='customers')renderCustomers();
+ if(name==='customers')renderCustomers();refreshCustomerSelect();
 }
 function showEditor(){
  document.querySelectorAll('.app-view').forEach(v=>v.hidden=true);
@@ -1237,8 +1237,7 @@ function createNewQuotation(){
  document.querySelectorAll('#page1 input').forEach(x=>x.value='');
  const vat=document.getElementById('vatPct');if(vat)vat.value=readStore(BARO_SETTINGS_KEY,{}).vat??11;
  const disc=document.getElementById('discountPct');if(disc)disc.value=readStore(BARO_SETTINGS_KEY,{}).discount??0;
- recalcAll();showEditor();syncActiveLabel();
- const customer=prompt('Enter customer name, or choose a saved customer from the customer selector on page 1.');if(customer){const name=document.querySelector('[data-key="clientName"]');if(name)name.value=customer;}
+ recalcAll();refreshCustomerSelect();showEditor();syncActiveLabel();
  saveData();
 }
 function saveCustomer(){
@@ -1246,7 +1245,7 @@ function saveCustomer(){
  const list=allCustomers();let c=list.find(x=>x.id===editingCustomerId);
  if(!c)c={id:'c'+Date.now()};
  Object.assign(c,{name,phone:document.getElementById('customerPhone').value,email:document.getElementById('customerEmail').value,venue:document.getElementById('customerVenue').value,address:document.getElementById('customerAddress').value});
- if(!list.some(x=>x.id===c.id))list.unshift(c);writeStore(BARO_CUSTOMERS_KEY,list);clearCustomerForm();renderCustomers();updateDashboard();
+ if(!list.some(x=>x.id===c.id))list.unshift(c);writeStore(BARO_CUSTOMERS_KEY,list);clearCustomerForm();renderCustomers();refreshCustomerSelect();updateDashboard();
 }
 function clearCustomerForm(){editingCustomerId=null;['customerName','customerPhone','customerEmail','customerVenue','customerAddress'].forEach(id=>document.getElementById(id).value='')}
 function editCustomer(id){const c=allCustomers().find(x=>x.id===id);if(!c)return;editingCustomerId=id;document.getElementById('customerName').value=c.name;document.getElementById('customerPhone').value=c.phone||'';document.getElementById('customerEmail').value=c.email||'';document.getElementById('customerVenue').value=c.venue||'';document.getElementById('customerAddress').value=c.address||'';showAppView('customers')}
@@ -1269,7 +1268,7 @@ function initManagement(){
   wrap.querySelector('select').addEventListener('change',e=>{const c=allCustomers().find(x=>x.id===e.target.value);if(!c)return;const set=(k,v)=>{const el=document.querySelector(`[data-key="${k}"]`);if(el)el.value=v||''};set('clientName',c.name);set('venueName',c.venue);set('phone',c.phone);set('email',c.email);const addr=document.querySelector('[data-key="address"]');if(addr)addr.value=c.address||'';saveData()});
  }
 }
-function refreshCustomerSelect(){const sel=document.getElementById('savedCustomerSelect');if(!sel)return;const selected=sel.value;sel.innerHTML='<option value="">Select customer...</option>'+allCustomers().map(c=>`<option value="${c.id}">${escapeApp(c.name)}</option>`).join('');sel.value=selected}
+function refreshCustomerSelect(){const sel=document.getElementById('savedCustomerSelect');if(!sel)return;const selected=sel.value;const customers=allCustomers();sel.innerHTML='<option value="">Select customer...</option>'+customers.map(c=>`<option value="${c.id}">${escapeApp(c.name)}</option>`).join('');sel.value=customers.some(c=>c.id===selected)?selected:''}
 const _saveDataOriginal=saveData;
 saveData=function(){_saveDataOriginal();if(activeQuoteId){const q=allQuotes().find(x=>x.id===activeQuoteId);if(q){q.data=quoteSnapshot();q.customerName=quoteTitle();writeStore(BARO_QUOTES_KEY,allQuotes())}}};
 

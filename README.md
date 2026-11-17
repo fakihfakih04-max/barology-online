@@ -1,16 +1,12 @@
-# BAROLOGY Quotation Management
+# BAROLOGY Quotation Management V3
 
-GitHub Pages quotation management app.
+Customer selector refresh fix.
 
-## Included
-- Dashboard, All Quotations, Customers, New Quotation and Quotation Settings
-- Saved customer selector is editor-only and hidden from printed PDF
-- Save Quotation button creates/updates a saved quotation in All Quotations
-- Monetary totals display `$` signs
-- VAT defaults to 11%, configurable in settings
+- Save a customer under Customers.
+- The saved customer appears immediately in the Saved Customer dropdown on the quotation cover page.
+- Select a customer to fill client name, venue, phone, and email.
+- Create and save quotations from the editor.
 
-## Publish
-Upload `index.html` and `README.md` to the root of your GitHub repository, then enable GitHub Pages from Settings → Pages → Deploy from a branch → `main` → `/(root)`.
+Publish by uploading `index.html` and `README.md` to the GitHub repository root, then enable GitHub Pages.
 
-## Storage
-This version stores quotations and customers in the browser's local storage. It does not sync across devices. Export/backup data regularly.
+Data is stored in this browser's local storage and is not shared between devices.
